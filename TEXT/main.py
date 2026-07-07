@@ -76,18 +76,8 @@ def get_top_customers():
         return{
             "massage": "No VIP customers found"
         }
-    limit = 3
-    max = list[0]
-    listsort = []
-    num =0
-    while True:
-        if i["total_amount"] > max:
-            listsort.append(i)
-            num += 1
-        if num > 3:
-            break
     return {
-        "top_customer": listsort
+        "top_customer": list
     }
 
 
