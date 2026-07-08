@@ -10,7 +10,6 @@ class StudentModel(Base):
     full_name = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, index=True)
 
-
 # Khai bao model de nhan du lieu tu nguoi dung
 class StudentRequetsDTO(BaseModel):
     id: int
