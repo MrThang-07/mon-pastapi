@@ -1,13 +1,23 @@
-from models import Team
+# chú ít thụt dùng db.commit ...
+# chuyền tham số đúng thứ tự ...
+# hàm sort dùng order_by
+# chú í đường dẫn teams_id  -> def chuyền vào teams_id
+# chỗ schemas và model kh có dấu phẩy
+# chỗ crud hàm cập nhật kh có dấu phẩy 
+# nên dùng import crud ....
+# hàm sort nhớ choice:str = "asc"
+
+
 from sqlalchemy.orm import Session
-from schemas import table_post
-def getall_lists(db : Session):
+from models import Team
+from schemas import table_team
+def get_allteam(db : Session):
     return db.query(Team).all()
 
-def get_id(db : Session , team_id : int):
+def get_team_id(db : Session , team_id:int):
     return db.query(Team).filter(Team.id == team_id).first()
 
-def post_team(db : Session , table : table_post):
+def post_team(db : Session , table: table_team):
     new_team = Team(
         country_name = table.country_name,
         coach_name = table.coach_name,
@@ -18,27 +28,29 @@ def post_team(db : Session , table : table_post):
     db.refresh(new_team)
     return new_team
 
-def update_team(db : Session , get_id : int , table : table_post):
-    db_team = get_id(db , get_id)
-    if db_team:
-        db_team.country_name = table.country_name,
-        db_team.coach_name = table.coach_name,
+def update_team(db : Session , table: table_team ,team_id:int):
+    db_team = get_team_id(db,team_id)
+    if db_team :
+        db_team.country_name = table.country_name
+        db_team.coach_name = table.coach_name
         db_team.group_name = table.group_name
         db.commit()
-        db.refresh()
+        db.refresh(db_team)
     return db_team
 
-def delete_team(db : Session , get_id : int ):
-    db_team = get_id(db , get_id)
+def delete_team(db : Session , team_id:int):
+    db_team = get_team_id(db,team_id)
     if db_team:
         db.delete(db_team)
         db.commit()
     return db_team
 
-def search_team(db : Session ,keyword : str):
+def search_team(db : Session , keyword:str):
     return db.query(Team).filter(Team.country_name.ilike(f"%{keyword}%")).all()
 
-def sort_team(db :Session , choice : str):
+def sort_team(db : Session , choice:str = "asc" ):
     if choice == "desc":
         return db.query(Team).order_by(Team.group_name.desc()).all()
     return db.query(Team).order_by(Team.group_name.asc()).all()
+
+    

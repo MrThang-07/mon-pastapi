@@ -7,5 +7,3 @@ class table_post(BaseModel):
     coach_name : str
     group_name : str 
 
-    class Config:
-        from_attributes = True
