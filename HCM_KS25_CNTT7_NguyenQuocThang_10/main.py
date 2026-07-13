@@ -15,6 +15,8 @@ def check_server():
 def get_all_employee(db : Session = Depends(get_db)):
     db_employee = employee_services.get_all_employee(db)
     return {
+        "statusCode":200,
+        "error": "null",
         "message": "Đã lấy danh sách nhân viên ",
         "data":db_employee
     }
@@ -22,6 +24,8 @@ def get_all_employee(db : Session = Depends(get_db)):
 def get_search_employee(keyword : str ,db : Session = Depends(get_db)):
     db_employee = employee_services.get_search_employee(db ,keyword)
     return {
+        "statusCode":200,
+        "error": "null",
         "message":"Đã tìm kiếm theo phòng ban",
         "data": db_employee
     }
@@ -29,6 +33,8 @@ def get_search_employee(keyword : str ,db : Session = Depends(get_db)):
 def get_employee_id(employee_id:int ,db : Session = Depends(get_db) ):
     db_employee = employee_services.get_employee_id(db , employee_id)
     return {
+        "statusCode":200,
+        "error": "null",
         "message": "Đã lấy chi tiết nhân viên",
         "data": db_employee
     }
@@ -36,6 +42,8 @@ def get_employee_id(employee_id:int ,db : Session = Depends(get_db) ):
 def post_employee(table :table_employees ,db : Session = Depends(get_db)):
     db_employee = employee_services.post_employee(db , table)
     return {
+        "statusCode":201,
+        "error": "null",
         "massage": "Đã thêm mới",
         "data": db_employee
     }
@@ -43,6 +51,8 @@ def post_employee(table :table_employees ,db : Session = Depends(get_db)):
 def put_employees(employee_id:int ,table :table_employees ,db : Session = Depends(get_db)):
     db_employee = employee_services.put_employee(db ,employee_id,table)
     return {
+        "statusCode":200,
+        "error": "null",
         "message": "Đã cập nhật ",
         "data" : db_employee
     }
@@ -50,6 +60,8 @@ def put_employees(employee_id:int ,table :table_employees ,db : Session = Depend
 def delete_employees(employee_id:int ,db : Session = Depends(get_db)):
     db_employee = employee_services.delete_employee(db , employee_id)
     return {
+        "statusCode":200,
+        "error": "null",
         "massage": "Đã xóa !",
         "data": db_employee
     }
