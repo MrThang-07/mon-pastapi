@@ -60,8 +60,7 @@ def put_employees(employee_id:int ,table :table_employees ,db : Session = Depend
 def delete_employees(employee_id:int ,db : Session = Depends(get_db)):
     db_employee = employee_services.delete_employee(db , employee_id)
     return {
-        "statusCode":200,
-        "error": "null",
+        
         "massage": "Đã xóa !",
         "data": db_employee
     }
