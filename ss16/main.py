@@ -1,6 +1,6 @@
 from database import Base , engine
 from fastapi import FastAPI
-from app.models.student_model import table_database
+from app.models.student_model import StudentModel
 from app.routers.student_router import student_router
 
 

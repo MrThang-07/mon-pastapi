@@ -1,71 +1,56 @@
-from database import Base
-# Import thêm Table để tạo bảng trung gian
+# pyrefly: ignore [missing-import]
 from sqlalchemy import Column, String, Integer, ForeignKey, Table
+# pyrefly: ignore [missing-import]
+from database import Base
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import relationship
 
-# =====================================================================
-# BẢNG TRUNG GIAN CHO MỐI QUAN HỆ NHIỀU - NHIỀU (Sinh viên - Môn học)
-# =====================================================================
-student_course_table = Table(
-    "student_course",
+# Middle table
+student_course = Table(
+    "student_courses",
     Base.metadata,
-    Column("student_id", Integer, ForeignKey("tables.id"), primary_key=True),
+    Column("student_id", Integer, ForeignKey("students.id"), primary_key=True),
     Column("course_id", Integer, ForeignKey("courses.id"), primary_key=True)
 )
 
-# =====================================================================
-# BẢNG DEPARTMENT (MỐI QUAN HỆ 1 - NHIỀU với Sinh viên)
-# =====================================================================
-class DepartmentModel(Base):
-    __tablename__ = "departments"
-    
-    id = Column(Integer, autoincrement=True, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    
-    # 1 Khoa có nhiều Sinh viên
-    students = relationship("table_database", back_populates="department")
+class StudentModel(Base):
+    __tablename__ = "students"
 
-# =====================================================================
-# BẢNG COURSE (MỐI QUAN HỆ NHIỀU - NHIỀU với Sinh viên)
-# =====================================================================
-class CourseModel(Base):
-    __tablename__ = "courses"
-    
-    id = Column(Integer, autoincrement=True, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    
-    # 1 Môn học có nhiều Sinh viên (dùng bảng trung gian student_course_table)
-    students = relationship("table_database", secondary=student_course_table, back_populates="courses")
-
-# =====================================================================
-# BẢNG SINH VIÊN (Chứa tất cả các mối quan hệ)
-# =====================================================================
-class table_database(Base):
-    __tablename__ = "tables"
-    
-    id = Column(Integer, autoincrement=True, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     age = Column(Integer, nullable=False)
-
-    # 1. Liên kết 1 - 1 (Code cũ của bạn)
-    profile = relationship("ProfileModel", back_populates="student", uselist=False)
-
-    # 2. Liên kết 1 - Nhiều (Sinh viên thuộc về 1 Khoa)
     department_id = Column(Integer, ForeignKey("departments.id"))
+
+    # Link by 1-1 relationship
+    # Link the relationship by the trick
+    profile = relationship("ProfileModel", back_populates="student", uselist=False)
     department = relationship("DepartmentModel", back_populates="students")
+    courses = relationship("CourseModel", secondary=student_course, back_populates="students")
 
-    # 3. Liên kết Nhiều - Nhiều (Sinh viên học nhiều Môn)
-    courses = relationship("CourseModel", secondary=student_course_table, back_populates="students")
 
-# =====================================================================
-# BẢNG PROFILE (MỐI QUAN HỆ 1 - 1 với Sinh viên)
-# =====================================================================
 class ProfileModel(Base):
     __tablename__ = "profiles"
-    
-    id = Column(Integer, autoincrement=True, primary_key=True, index=True)
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     bio = Column(String(100))
-    
-    # Tạo khóa ngoại (Code cũ của bạn)
-    student_id = Column(Integer, ForeignKey("tables.id"), unique=True)
-    student = relationship("table_database", back_populates="profile")
+    # Create foreign key
+    student_id = Column(Integer, ForeignKey("students.id"), unique=True)
+    # Links in the reverse direction
+    student = relationship("StudentModel", back_populates="profile")
+
+
+# Create a Department table associated with a student table with a 1 multiple relationship
+class DepartmentModel(Base):
+    __tablename__ = "departments"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+
+    students = relationship("StudentModel", back_populates="department")
+
+# Create a course table associated with a student table with multiple relationships
+class CourseModel(Base):
+    __tablename__ = "courses"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+
+    students = relationship("StudentModel", secondary=student_course, back_populates="courses")
