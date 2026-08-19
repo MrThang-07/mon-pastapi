@@ -88,3 +88,5 @@ class RoleChecker:
                 detail=f"Quyền truy cập bị từ chối! Yêu cầu một trong các quyền: {self.allowed_roles}"
             )
         return current_user
+
+
