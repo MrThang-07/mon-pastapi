@@ -1,1 +1,0 @@
-def tam_thoi(): pass
