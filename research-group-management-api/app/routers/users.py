@@ -17,7 +17,7 @@ router = APIRouter(
 def get_my_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
-# 2. Khu vực VIP chỉ dành cho ADMIN (Đã thêm tính năng tìm kiếm)
+# 2. Khu vực VIP chỉ dành cho ADMIN 
 @router.get("", response_model=list[UserResponse])
 def get_all_users(
     # Thêm các tham số để tìm kiếm trên URL

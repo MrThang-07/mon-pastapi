@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+import jwt
+
 from app.db.database import get_db
 from app.schemas.user import UserCreate, UserLogin, UserResponse
-
-# Import tầng service vào để xài. 
-# Lưu ý: Sửa lại app.services.user thành tên file service của bạn nếu bạn đặt tên khác nhé!
 from app.services import user as user_service 
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token
+
+from app.core.config import settings 
+from app.models.user import User 
 
 router = APIRouter(
     prefix="/auth", # Đường dẫn gốc cho các API trong file này
@@ -24,24 +27,30 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     new_user = user_service.create_user(db=db, user_data=user_data)
     return new_user
 
+
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     """
     API Đăng nhập:
     - Xác thực thông tin.
-    - Trả về mã Token (vé thông hành).
+    - Trả về mã Token (vé thông hành) và Refresh Token.
     """
     user = user_service.authenticate_user(db=db, user_data=user_data)
 
-    # Lấy quyền của user. Vì Database của bạn lưu thẳng role vào bảng User nên gọi trực tiếp
+    # Lấy quyền của user. 
     role_name = user.role 
+    token_data = {"sub": user.email, "id": user.id, "role": role_name}
+    
+    # 1. Tạo JWT Access Token
+    access_token = create_access_token(data=token_data)
 
-    # Tạo JWT Access Token
-    access_token = create_access_token(data={"sub": user.email, "id": user.id, "role": role_name})
+    # 2. Tạo JWT Refresh Token (Vé dài hạn) 
+    refresh_token = create_refresh_token(data=token_data)
 
     return {
         "message": "Đăng nhập thành công",
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
         "data": {
             "id": user.id,
@@ -51,3 +60,50 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             "is_active": user.is_active
         }
     }
+
+
+# --------------------------------------------------------
+# KHU VỰC API ĐỔI VÉ (REFRESH TOKEN)
+# --------------------------------------------------------
+
+# Khuôn hứng dữ liệu từ giao diện gửi lên
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
+
+@router.post("/refresh", status_code=status.HTTP_200_OK)
+def refresh_access_token(request: TokenRefreshRequest, db: Session = Depends(get_db)):
+    """
+    API Đổi vé:
+    - Nhận Refresh Token.
+    - Kiểm tra hợp lệ và trả về Access Token mới.
+    """
+    try:
+        # Giải mã thẻ cư dân
+        payload = jwt.decode(
+            request.refresh_token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
+        )
+        
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token không hợp lệ")
+            
+        # Kiểm tra xem user có tồn tại và đang active không
+        user = db.query(User).filter(User.email == email).first()
+        if user is None or not user.is_active:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tài khoản không tồn tại hoặc đã bị khóa")
+            
+        # Tạo Access Token mới tinh
+        token_data = {"sub": user.email, "id": user.id, "role": user.role}
+        new_access_token = create_access_token(data=token_data)
+        
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token đã hết hạn. Vui lòng đăng nhập lại!")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token giả mạo hoặc không hợp lệ!")
