@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.db.database import Base
 
+
 class ResearchProject(Base):
     __tablename__ = "research_projects"
 

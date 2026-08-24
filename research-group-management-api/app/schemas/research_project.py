@@ -43,7 +43,7 @@ class ResearchMemberAdd(BaseModel):
 class ResearchMemberResponse(BaseModel):
     project_id: int
     user_id: int
-    role: MemberRole # Đã áp dụng Enum thay cho chuỗi str thường
+    role: MemberRole 
     joined_at: datetime
 
     class Config:

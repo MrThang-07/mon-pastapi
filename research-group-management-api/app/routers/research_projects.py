@@ -9,7 +9,6 @@ from app.schemas.research_project import ResearchProjectUpdate
 from app.schemas.research_project import ResearchMemberAdd, ResearchMemberResponse
 from app.schemas.research_project import ResearchProjectCreate, ResearchProjectResponse
 
-# Import Bác bảo vệ
 from app.core.security import get_current_user 
 
 router = APIRouter(
@@ -64,7 +63,6 @@ def get_projects(
     """
     
     # Bước 1: Tìm tất cả các Đề tài mà User này có mặt trong bảng trung gian (ResearchMember)
-    # Câu lệnh này giống như việc hỏi: "Mở bảng thành viên ra, xem thằng Thắng đang ở những nhóm nào?"
     query = db.query(ResearchProject).join(ResearchMember).filter(
         ResearchMember.user_id == current_user.id
     )
@@ -93,30 +91,28 @@ def get_project_detail(
     - Chặn đứng nếu người dùng không phải là thành viên của đề tài này.
     """
     
-    # Bước 1: Tìm đề tài trong kho (Database)
+    # Tìm đề tài trong kho (Database)
     project = db.query(ResearchProject).filter(ResearchProject.id == project_id).first()
     
-    # Validation: Nếu gõ ID bậy bạ không có thực -> Báo lỗi 404 (Đáp ứng yêu cầu "xử lý đề tài không tồn tại")
+    
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Không tìm thấy đề tài nghiên cứu này!"
         )
 
-    # Bước 2: Bác bảo vệ tra sổ xem current_user có nằm trong nhóm này không?
+    
     is_member = db.query(ResearchMember).filter(
         ResearchMember.project_id == project_id,
         ResearchMember.user_id == current_user.id
     ).first()
 
-    # Nếu sổ không có tên -> Đuổi cổ! (Lỗi 403: Không có quyền truy cập)
     if not is_member:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Bạn không có quyền xem đề tài này vì không phải là thành viên!"
         )
 
-    # Bước 3: Vượt qua mọi trạm kiểm soát -> Trả về thông tin đề tài
     return project
 
 # ==========================================
@@ -147,15 +143,13 @@ def update_project(
             detail="Bạn không có quyền! Chỉ Trưởng nhóm (OWNER) mới được phép sửa."
         )
 
-    # Bước 3: Cập nhật dữ liệu (Viết thủ công cực kỳ dễ hiểu)
-    # Khách gửi cái gì lên thì mình cập nhật cái đó
+    # Bước 3: Cập nhật dữ liệu
     if project_data.name is not None:
         project.name = project_data.name
         
     if project_data.description is not None:
         project.description = project_data.description
 
-    # Lưu vào Database
     db.commit()
     db.refresh(project)
     
@@ -188,20 +182,15 @@ def delete_project(
             detail="Bạn không có quyền! Chỉ Trưởng nhóm (OWNER) mới được phép xóa."
         )
 
-    # Bước 3: Tiến hành xóa an toàn
-    # Giải thích cho thầy cô: Phải xóa Thành viên trước (bảng con), rồi mới xóa Đề tài (bảng cha) để không bị lỗi Khóa ngoại.
-    
+    # Bước 3: Tiến hành xóa 
+
     # Xóa toàn bộ dòng trong bảng Member có chứa project_id này
     db.query(ResearchMember).filter(ResearchMember.project_id == project_id).delete()
-    
-    # Cuối cùng mới xóa cái Đề tài đó đi
+
     db.delete(project)
     
-    # Chốt sổ
     db.commit()
-    
-    # Hàm delete dùng status_code 204 (No Content) nên chỉ cần return rỗng là xong
-    return
+    return 
 
 # ==========================================
 # API 3: THÊM THÀNH VIÊN VÀO NHÓM (Chỉ OWNER)
@@ -213,7 +202,7 @@ def add_member(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Bước 1: Kiểm tra xem người đang thao tác có phải là OWNER không?
+    # Bước 1: Kiểm tra xem người đang thao tác có phải là OWNER không
     is_owner = db.query(ResearchMember).filter(
         ResearchMember.project_id == project_id,
         ResearchMember.user_id == current_user.id,
@@ -226,7 +215,7 @@ def add_member(
             detail="Bạn không có quyền! Chỉ Trưởng nhóm mới được thêm thành viên."
         )
 
-    # Bước 2: Kiểm tra xem người được mời có tồn tại không?
+    # Bước 2: Kiểm tra xem người được mời có tồn tại không
     user_to_add = db.query(User).filter(User.id == member_data.user_id).first()
     if not user_to_add:
         raise HTTPException(status_code=404, detail="Người dùng này không tồn tại trong hệ thống!")
