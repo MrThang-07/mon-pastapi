@@ -10,7 +10,7 @@ from app.schemas.research_project import ResearchMemberAdd, ResearchMemberRespon
 from app.schemas.research_project import ResearchProjectCreate, ResearchProjectResponse
 
 from app.dependencies.auth import get_current_user 
-
+from app.utils.logger import log_activity
 router = APIRouter(
     prefix="/research-projects",
     tags=["Research Projects"]
@@ -46,6 +46,14 @@ def create_project(
     )
     db.add(new_member)
     db.commit()
+
+    # Ghi log hoạt động tạo đề tài
+    log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="CREATE_PROJECT",
+        description=f"Đã tạo đề tài nghiên cứu: '{new_project.name}' (ID: {new_project.id})"
+    )
 
     return new_project
 
@@ -152,6 +160,14 @@ def update_project(
     db.commit()
     db.refresh(project)
     
+    # Ghi log hoạt động sửa đề tài
+    log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="UPDATE_PROJECT",
+        description=f"Đã cập nhật đề tài nghiên cứu ID: {project_id}"
+    )
+    
     return project
 
 
@@ -186,8 +202,16 @@ def delete_project(
     db.query(ResearchMember).filter(ResearchMember.project_id == project_id).delete()
 
     db.delete(project)
-    
     db.commit()
+    
+    # Ghi log hoạt động xóa đề tài
+    log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="DELETE_PROJECT",
+        description=f"Đã xóa đề tài nghiên cứu ID: {project_id}"
+    )
+    
     return 
 
 # ==========================================
@@ -235,6 +259,14 @@ def add_member(
     )
     db.add(new_member)
     db.commit()
+
+    # Ghi log hoạt động thêm thành viên
+    log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="ADD_MEMBER",
+        description=f"Đã thêm user_id {member_data.user_id} vào đề tài ID: {project_id}"
+    )
 
     return {"message": f"Đã thêm thành viên vào nhóm thành công!"}
 
@@ -285,6 +317,15 @@ def remove_member(
 
     db.delete(member_to_remove)
     db.commit()
+    
+    # Ghi log hoạt động xóa thành viên
+    log_activity(
+        db=db,
+        user_id=current_user.id,
+        action="REMOVE_MEMBER",
+        description=f"Đã xóa user_id {user_id} khỏi đề tài ID: {project_id}"
+    )
+    
     return
 
 
@@ -303,7 +344,7 @@ def get_project_members(
 
     if not is_member:
         raise HTTPException(
-            status_code=403, 
+            status_code=status.HTTP_403_FORBIDDEN, 
             detail="Bạn không có quyền! Chỉ thành viên mới được xem danh sách này."
         )
 
