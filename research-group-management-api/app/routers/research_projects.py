@@ -9,18 +9,18 @@ from app.schemas.research_project import ResearchProjectUpdate
 from app.schemas.research_project import ResearchMemberAdd, ResearchMemberResponse
 from app.schemas.research_project import ResearchProjectCreate, ResearchProjectResponse
 
-from app.core.security import get_current_user 
+from app.dependencies.auth import get_current_user 
 
 router = APIRouter(
     prefix="/research-projects",
     tags=["Research Projects"]
 )
-
+# Tạo đề tài nghiên cứu
 @router.post("/", response_model=ResearchProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     project_data: ResearchProjectCreate, 
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # Bắt buộc đăng nhập
+    current_user: User = Depends(get_current_user) 
 ):
     """
     API Tạo đề tài nghiên cứu:
@@ -42,19 +42,19 @@ def create_project(
     new_member = ResearchMember(
         project_id=new_project.id,
         user_id=current_user.id,
-        role="OWNER" # Phong chức Trưởng nhóm!
+        role="OWNER" 
     )
     db.add(new_member)
     db.commit()
 
     return new_project
 
-
+# API trả về đề tài nghiên cứu của owner / member
 @router.get("/", response_model=List[ResearchProjectResponse], status_code=status.HTTP_200_OK)
 def get_projects(
-    search: Optional[str] = None, # Tham số hứng từ khóa tìm kiếm từ URL
+    search: Optional[str] = None, 
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user) # Bắt buộc đăng nhập
+    current_user: User = Depends(get_current_user)
 ):
     """
     API Lấy danh sách đề tài:
@@ -78,10 +78,10 @@ def get_projects(
     return projects
 
 
-
+# api xem chi tiết đề tài nghiên cứu chỉ thành viên mới xem dc 
 @router.get("/{project_id}", response_model=ResearchProjectResponse, status_code=status.HTTP_200_OK)
 def get_project_detail(
-    project_id: int, # Lấy ID từ URL
+    project_id: int, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user) # Bắt buộc đăng nhập
 ):
@@ -115,9 +115,8 @@ def get_project_detail(
 
     return project
 
-# ==========================================
-# API 1: CẬP NHẬT ĐỀ TÀI (Chỉ OWNER được sửa)
-# ==========================================
+# API  CẬP NHẬT ĐỀ TÀI (Chỉ OWNER được sửa)
+
 @router.put("/{project_id}", response_model=ResearchProjectResponse)
 def update_project(
     project_id: int,
@@ -156,9 +155,8 @@ def update_project(
     return project
 
 
-# ==========================================
-# API 2: XÓA ĐỀ TÀI (Chỉ OWNER được xóa)
-# ==========================================
+# API XÓA ĐỀ TÀI (Chỉ OWNER được xóa)
+
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(
     project_id: int,
@@ -170,7 +168,7 @@ def delete_project(
     if not project:
         raise HTTPException(status_code=404, detail="Không tìm thấy đề tài!")
 
-    # Bước 2: Kiểm tra chức danh (Y chang phần cập nhật)
+    # Bước 2: Kiểm tra chức danh 
     member_info = db.query(ResearchMember).filter(
         ResearchMember.project_id == project_id,
         ResearchMember.user_id == current_user.id
@@ -193,12 +191,12 @@ def delete_project(
     return 
 
 # ==========================================
-# API 3: THÊM THÀNH VIÊN VÀO NHÓM (Chỉ OWNER)
+# API THÊM THÀNH VIÊN VÀO NHÓM (Chỉ OWNER)
 # ==========================================
 @router.post("/{project_id}/members", status_code=status.HTTP_201_CREATED)
 def add_member(
     project_id: int,
-    member_data: ResearchMemberAdd, # Lấy ID người cần thêm từ Frontend
+    member_data: ResearchMemberAdd,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -240,9 +238,9 @@ def add_member(
 
     return {"message": f"Đã thêm thành viên vào nhóm thành công!"}
 
-# ==========================================
-# API 4: XÓA THÀNH VIÊN KHỎI NHÓM (Chỉ OWNER)
-# ==========================================
+
+# API XÓA THÀNH VIÊN KHỎI NHÓM (Chỉ OWNER)
+
 @router.delete("/{project_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(
     project_id: int,
@@ -289,16 +287,15 @@ def remove_member(
     db.commit()
     return
 
-# ==========================================
-# API 5: XEM DANH SÁCH THÀNH VIÊN
-# ==========================================
+
+# API XEM DANH SÁCH THÀNH VIÊN
 @router.get("/{project_id}/members", response_model=List[ResearchMemberResponse])
 def get_project_members(
     project_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Bác bảo vệ tra sổ xem người gọi API có nằm trong nhóm không?
+
     is_member = db.query(ResearchMember).filter(
         ResearchMember.project_id == project_id,
         ResearchMember.user_id == current_user.id

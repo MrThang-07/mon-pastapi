@@ -18,7 +18,7 @@ class ResearchProjectBase(BaseModel):
     description: Optional[str] = None
 
 class ResearchProjectCreate(ResearchProjectBase):
-    pass  # Dùng luôn các trường của Base để tạo
+    pass  
 
 class ResearchProjectUpdate(BaseModel):
     name: Optional[str] = None

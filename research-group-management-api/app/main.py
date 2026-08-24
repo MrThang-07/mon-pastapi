@@ -8,6 +8,7 @@ from app.models.research_project import ResearchProject, ResearchMember
 from app.models.research_task import ResearchTask
 from app.routers import auth, users
 from app.core.exceptions import setup_exception_handlers
+from app.routers import research_projects
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,6 +21,7 @@ app = FastAPI(
 setup_exception_handlers(app)
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(research_projects.router)
 # Cấu hình CORS 
 app.add_middleware(
     CORSMiddleware,
