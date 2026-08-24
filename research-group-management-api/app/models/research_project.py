@@ -28,3 +28,5 @@ class ResearchMember(Base):
     # Mối quan hệ
     project = relationship("ResearchProject", back_populates="members")
     user = relationship("User", back_populates="memberships")
+
+
