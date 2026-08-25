@@ -56,7 +56,8 @@ def create_research_task(
         title=task_data.title,
         description=task_data.description,
         due_date=task_data.due_date,
-        priority=task_data.priority.value if hasattr(task_data.priority, 'value') else task_data.priority
+        priority=task_data.priority,  
+        status=task_data.status      
     )
     
     db.add(new_task)
@@ -221,7 +222,6 @@ def update_task(
     if task_data.due_date is not None:
         task.due_date = task_data.due_date
 
-    # Lưu ý: Vì status và priority là Enum, cần thêm .value để lấy ra chữ (VD: "TODO", "HIGH")
     if task_data.status is not None:
         task.status = task_data.status.value
         
@@ -246,12 +246,11 @@ def delete_task(
     Xóa nhiệm vụ:
     - Áp dụng Permission: Chỉ Trưởng nhóm (OWNER) mới được phép xóa task.
     """
-    # 1. Tìm task
     task = db.query(ResearchTask).filter(ResearchTask.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Không tìm thấy nhiệm vụ!")
 
-    # 2. Phân quyền cực ngặt: Chỉ OWNER của project mới được xóa
+
     is_owner = db.query(ResearchMember).filter(
         ResearchMember.project_id == task.project_id,
         ResearchMember.user_id == current_user.id,
