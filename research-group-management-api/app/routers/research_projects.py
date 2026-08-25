@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status , HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from typing import List , Optional
-# Import Models
+
 from app.models.research_project import ResearchProject, ResearchMember
 from app.models.user import User
 from app.schemas.research_project import ResearchProjectUpdate
@@ -77,7 +77,7 @@ def get_projects(
 
     # Bước 2: Xử lý chức năng Search (Nếu người dùng có nhập từ khóa tìm kiếm)
     if search:
-        # ilike giúp tìm kiếm không phân biệt hoa thường (VD: gõ "AI" thì ra cả "ai", "Ai")
+
         query = query.filter(ResearchProject.name.ilike(f"%{search}%"))
 
     # Bước 3: Lấy toàn bộ kết quả sau khi đã lọc
@@ -91,7 +91,7 @@ def get_projects(
 def get_project_detail(
     project_id: int, 
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user) # Bắt buộc đăng nhập
+    current_user: User = Depends(get_current_user) 
 ):
     """
     API Lấy chi tiết đề tài:
