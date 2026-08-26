@@ -36,17 +36,3 @@ def create_access_token(data: dict) -> str:
 
     return encoded_jwt
 
-def create_refresh_token(data: dict) -> str:
-    """
-    Tạo Refresh Token (Hạn sử dụng lâu hơn)
-    """
-    to_encode = data.copy()
-    
-    # Hạn sử dụng: Cộng thêm 7 ngày thay vì vài phút
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
-    to_encode.update({"exp": expire})
-    
-    # Dùng máy ép nhựa jwt.encode để đóng gói
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    
-    return encoded_jwt

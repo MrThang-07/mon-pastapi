@@ -6,7 +6,7 @@ import jwt
 from app.db.database import get_db
 from app.schemas.user import UserCreate, UserLogin, UserResponse
 from app.services import user as user_service 
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token
 
 from app.core.config import settings 
 from app.models.user import User 
@@ -44,13 +44,13 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     # 1. Tạo JWT Access Token
     access_token = create_access_token(data=token_data)
 
-    # 2. Tạo JWT Refresh Token (Vé dài hạn) 
-    refresh_token = create_refresh_token(data=token_data)
+    # # 2. Tạo JWT Refresh Token (Vé dài hạn) 
+    # refresh_token = create_refresh_token(data=token_data)
 
     return {
         "message": "Đăng nhập thành công",
         "access_token": access_token,
-        "refresh_token": refresh_token,
+        # "refresh_token": refresh_token,
         "token_type": "bearer",
         "data": {
             "id": user.id,
@@ -61,49 +61,3 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         }
     }
 
-
-# --------------------------------------------------------
-# KHU VỰC API ĐỔI VÉ (REFRESH TOKEN)
-# --------------------------------------------------------
-
-# Khuôn hứng dữ liệu từ giao diện gửi lên
-class TokenRefreshRequest(BaseModel):
-    refresh_token: str
-
-@router.post("/refresh", status_code=status.HTTP_200_OK)
-def refresh_access_token(request: TokenRefreshRequest, db: Session = Depends(get_db)):
-    """
-    API Đổi vé:
-    - Nhận Refresh Token.
-    - Kiểm tra hợp lệ và trả về Access Token mới.
-    """
-    try:
-        # Giải mã thẻ cư dân
-        payload = jwt.decode(
-            request.refresh_token, 
-            settings.SECRET_KEY, 
-            algorithms=[settings.ALGORITHM]
-        )
-        
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token không hợp lệ")
-            
-        # Kiểm tra xem user có tồn tại và đang active không
-        user = db.query(User).filter(User.email == email).first()
-        if user is None or not user.is_active:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tài khoản không tồn tại hoặc đã bị khóa")
-            
-        # Tạo Access Token mới tinh
-        token_data = {"sub": user.email, "id": user.id, "role": user.role}
-        new_access_token = create_access_token(data=token_data)
-        
-        return {
-            "access_token": new_access_token,
-            "token_type": "bearer"
-        }
-        
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token đã hết hạn. Vui lòng đăng nhập lại!")
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh Token giả mạo hoặc không hợp lệ!")
